@@ -1,0 +1,48 @@
+name: Go Coverage Tests
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 检出代码
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 安装 Go
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      # 运行测试并生成日志和覆盖率报告
+      - name: Run coverage tests
+        run: |
+          mkdir -p artifacts
+          echo "=== Running coverage module tests ==="
+          go test -v ./internal/coverage/... -coverprofile=artifacts/coverage.out | tee artifacts/test.log
+        continue-on-error: true
+
+      # 上传测试日志（即使失败也上传）
+      - name: Upload test logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-test-logs
+          path: artifacts/test.log
+
+      # 上传覆盖率报告文件
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-profile
+          path: artifacts/coverage.out
+
